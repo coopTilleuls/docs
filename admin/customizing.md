@@ -1,310 +1,518 @@
 # Customizing the Admin
 
-## Preparing your App
+## General
+### Icon
+### Show the Names of your Entities Instead of their IRIs
 
-```javascript
-import React from 'react';
-import { HydraAdmin, replaceResources } from '@api-platform/admin';
-import parseHydraDocumentation from '@api-platform/api-doc-parser/lib/hydra/parseHydraDocumentation';
-import { greetingsNameInput } from './components/greetings/inputs.js';
-import { greetingsNameField } from './components/greetings/fields.js';
-import BookList from './components/books/list.js';
-import BookCreate from './components/books/create.js';
-import BookEdit from './components/books/edit.js';
-import { booksDescriptionInput } from './components/books/inputs.js';
-
-const entrypoint = process.env.REACT_APP_API_ENTRYPOINT;
-
-const greetings = {
-  name: 'greetings',
-  fields: [
-    {
-      name: 'name',
-      input: greetingsNameInput,
-      field: greetingsNameField,
-    }
-  ],
-  listFields: [
-    // list here all fields you want to be displayed in the List view
-  ],
-};
-
-const books = {
-  name: 'books',
-  list: BookList,
-  create: BookCreate,
-  edit: BookEdit,
-  fields: [
-    {
-      name: 'description',
-      input: booksDescriptionInput,
-    }
-  ]
-};
-
-const newResources = [
-  greetings,
-  books,
-];
-
-const myApiDocumentationParser = entrypoint => parseHydraDocumentation(entrypoint)
-  .then(({ api }) => {
-    replaceResources(api.resources, newResources);
-    return { api };
-  })
-;
-
-export default () => <HydraAdmin apiDocumentationParser={myApiDocumentationParser} entrypoint={entrypoint} />;
+## List
+### Add a field
 ```
+import React, {Component} from 'react';
+import {HydraAdmin, ListGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextField} from 'react-admin';
 
-All you have to do is to provide a collection of objects (the `newResources` variable).
-The value of the `name` property must match the resource name you want to customize, or it will be ignored.
-Other available properties will be explained further.
-
-## Customizing Inputs
-
-```javascript
-import React from 'react';
-import { TextInput } from 'react-admin';
-
-const myInput = props => (
-  <TextInput label="My new label" {...props} />
+const BookListGuesser = props => (
+  <ListGuesser {...props}>
+    <TextField source={'newField'} label={'newField'} />
+  </ListGuesser>
 );
 
-const greetings = {
-  name: 'greetings',
-  fields: [
-    {
-      name: 'name',
-      input: myInput,
-    },
-  ],
-};
-
-export default [
-  greetings,
-];
-```
-
-That's it! Our custom `TextInput` component will now be used in all forms to edit the `name` property of the `greeting` resource.
-In this example, we are reusing an `Input` component provided by `react-admin`, but you can use any component you want as long as you respect [the signature expected by react-admin](https://marmelab.com/react-admin/Inputs.html).
-
-## Customizing Fields
-
-```javascript
-import React from 'react';
-import { UrlField } from 'react-admin';
-
-const myField = props => (
-  <UrlField {...props} />
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} list={BookListGuesser} />
 );
 
-const greetings = {
-  name: 'greetings',
-  fields: [
-    {
-      name: 'url',
-      field: myField,
-    },
-  ],
-};
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-export default [
-  greetings,
-];
+export default App;
 ```
 
-That's it! Our custom `myField` component will now be used to display the resource.
-In this example, we are reusing a `Field` component provided by `react-admin`, but you can use any component you want as long as you respect [the signature expected by react-admin](https://marmelab.com/react-admin/Fields.html).
+### Customize a field
 
-## "Free" Mode
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ListGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextField} from 'react-admin';
 
-If you want to fully customize the admin, here is how you can do it:
+const BookListGuesser = props => (
+  <ListGuesser {...props}>
+    <TextField source={'description'} label={'description'} style={{background: 'red'}} />
+  </ListGuesser>
+);
 
-```javascript
-import React from 'react';
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} list={BookListGuesser} />
+);
 
-const GreetingList = props => <p>Yay! I can do what I want!</p>;
-const GreetingCreate = props => <p>Yay! I can do what I want!</p>;
-const GreetingEdit = props => <p>Yay! I can do what I want!</p>;
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-const greetings = {
-  name: 'greetings',
-  list: GreetingList,
-  create: GreetingCreate,
-  edit: GreetingEdit,
-};
-
-export default [
-  greetings,
-];
+export default App;
 ```
 
-## Reusing the Default Layout
+### Remove or reorder field(s)
 
-Most of the time you want to keep the default layout and just customize what is inside, here is how to do it:
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ListGuesser, ResourceGuesser} from '@api-platform/admin';
 
-### List
+const BookListGuesser = props => (
+  <ListGuesser {...props} fields={['isbn', 'description']} />
+);
 
-```javascript
-import React from 'react';
-import { List, Datagrid } from 'react-admin';
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} list={BookListGuesser} />
+);
 
-const GreetingList = props => {
-  const getField = fieldName => {
-    const {options: {resource: {fields}}} = props;
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-    return fields.find(resourceField => resourceField.name === fieldName) ||
-      null;
-  };
-
-  const displayField = fieldName => {
-    const {options: {api, fieldFactory, resource}} = props;
-
-    const field = getField(fieldName);
-
-    if (field === null) {
-      return;
-    }
-
-    return fieldFactory(field, {api, resource});
-  };
-
-  return (
-    <List {...props}>
-      <Datagrid>
-        {displayField('name')}
-      </Datagrid>
-    </List>
-  );
-};
-
-const greetings = {
-  name: 'greetings',
-  list: GreetingList,
-};
-
-export default [
-  greetings,
-];
+export default App;
 ```
 
-### Create
+## Show
 
-#### Customizing the Form Layout
+### Add a field
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ShowGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextField} from 'react-admin';
 
-```javascript
-import React from 'react';
-import { Create, SimpleForm } from 'react-admin';
-import { getResourceField } from '@api-platform/admin/lib/docsUtils';
+const BookShowGuesser = props => (
+  <ShowGuesser {...props}>
+    <TextField source={'newField'} label={'newField'} />
+  </ShowGuesser>
+);
 
-const GreetingCreate = props => {
-  const {options: {inputFactory, resource}} = props;
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} show={BookShowGuesser} />
+);
 
-  return (
-    <Create {...props}>
-      <SimpleForm>
-        <div className="custom-grid">
-          <div className="column">
-            {inputFactory(getResourceField(resource, 'name'))}
-          </div>
-          <div className="column">
-            {inputFactory(getResourceField(resource, 'description'))}
-          </div>
-        </div>
-      </SimpleForm>
-    </Create>
-  );
-};
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-const greetings = {
-  name: 'greetings',
-  create: GreetingCreate,
-};
-
-export default [
-  greetings,
-];
+export default App;
 ```
 
-This way, we have been reusing most of the default behavior, but we managed to had a custom grid. This could also be a way to customize the fields order, and many more things you could think of.
+### Customize a field
 
-#### Dynamic Display
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ShowGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextField} from 'react-admin';
 
-If you want to have a form with dynamic display, just use a connected component like this one:
+const BookShowGuesser = props => (
+  <ShowGuesser {...props}>
+    <TextField source={'description'} label={'description'} style={{background: 'red'}} />
+  </ShowGuesser>
+);
 
-```javascript
-import React from 'react';
-import { connect } from 'react-redux';
-import { formValueSelector } from 'redux-form';
-import { getResourceField } from '@api-platform/admin/lib/docsUtils';
-import { Create, SimpleForm } from 'react-admin';
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} show={BookShowGuesser} />
+);
 
-const GreetingCreateView = props => {
-  const {options: {inputFactory, resource}, formValueName} = props;
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-  return (
-    <Create {...props}>
-      <SimpleForm>
-        {inputFactory(getResourceField(resource, 'name'))}
-        {formValueName && (
-          inputFactory(getResourceField(resource, 'description'))
-        )}
-      </SimpleForm>
-    </Create>
-  );
-};
-
-const mapStateToProps = state => ({
-  formValueName: formValueSelector('record-form')(state, 'name'),
-});
-
-const GreetingCreate = connect(mapStateToProps)(GreetingCreateView);
-
-const greetings = {
-  name: 'greetings',
-  create: GreetingCreate,
-};
-
-export default [
-  greetings,
-];
+export default App;
 ```
 
-### Edit
+### Remove or reorder field(s)
 
-```javascript
-import React from 'react';
-import { Edit, SimpleForm } from 'react-admin';
-import { getResourceField } from '@api-platform/admin/lib/docsUtils';
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ShowGuesser, ResourceGuesser} from '@api-platform/admin';
 
-const GreetingEdit = props => {
-  const {options: {inputFactory, resource}} = props;
+const BookShowGuesser = props => (
+  <ShowGuesser {...props} fields={['isbn', 'description']} />
+);
 
-  return (
-    <Edit {...props}>
-      <SimpleForm>
-        <div className="custom-grid">
-          <div className="column">
-            {inputFactory(getResourceField(resource, 'name'))}
-          </div>
-          <div className="column">
-            {inputFactory(getResourceField(resource, 'description'))}
-          </div>
-        </div>
-      </SimpleForm>
-    </Edit>
-  );
-};
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} show={BookShowGuesser} />
+);
 
-const greetings = {
-  name: 'greetings',
-  edit: GreetingEdit,
-};
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
 
-export default [
-  greetings,
-];
+export default App;
 ```
 
-In this example, we have been able to customize the template to add a custom grid, but you could do more, have a look at the `Create`part above to see more examples.
+## Create
+
+### Add an input
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, CreateGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextInput} from 'react-admin';
+
+const BookCreateGuesser = props => (
+  <CreateGuesser {...props}>
+    <TextInput source={'newInput'} label={'newInput'} />
+  </CreateGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} create={BookCreateGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Customize an input
+```
+import React, {Component} from 'react';
+import {HydraAdmin, CreateGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextInput} from 'react-admin';
+
+const BookCreateGuesser = props => (
+  <CreateGuesser {...props}>
+    <TextInput source={'description'} label={'description'} style={{background: 'red'}} />
+  </CreateGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} create={BookCreateGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Remove or reorder input(s)
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, CreateGuesser, ResourceGuesser} from '@api-platform/admin';
+
+const BookCreateGuesser = props => (
+  <CreateGuesser {...props} inputs={['description', 'isbn']} />
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} create={BookCreateGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+## Edit
+### Add an input
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, EditGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextInput} from 'react-admin';
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props}>
+    <TextInput source={'newInput'} label={'newInput'} />
+  </EditGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Customize an input
+```
+import React, {Component} from 'react';
+import {HydraAdmin, EditGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextInput} from 'react-admin';
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props}>
+    <TextInput source={'description'} label={'description'} style={{background: 'red'}} />
+  </EditGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Remove or reorder input(s)
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, EditGuesser, ResourceGuesser} from '@api-platform/admin';
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props} inputs={['isbn', 'description']} />
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Custom validation
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, EditGuesser, ResourceGuesser} from '@api-platform/admin';
+import {TextInput} from 'react-admin';
+
+const required = (message = 'Required') => value => value ? undefined : message;
+const minLength = (max, message = 'Too short') => value => value && value.length < max ? message : undefined;
+
+const validateTitle = [required(), minLength(50)];
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props}>
+    <TextInput source={'title'} label={'title'} validate={validateTitle} />
+  </EditGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://demo.api-platform.com">
+        <BookResourceGuesser name={'books'} />
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+## Customize a relation
+### To an other entity
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ListGuesser, ResourceGuesser, ShowGuesser, CreateGuesser, EditGuesser} from '@api-platform/admin';
+import {ReferenceField, TextField, ReferenceInput, SelectInput} from 'react-admin';
+
+const BookReviewsField = (props) => (
+  <ReferenceField reference={'authors'} {...props}>
+    <TextField source="name"/>
+  </ReferenceField>
+);
+
+const BookReviewsInput = (props) => (
+  <ReferenceInput reference={'authors'} {...props}>
+      <SelectInput optionText="name"/>
+  </ReferenceInput>
+);
+
+const BookListGuesser = props => (
+  <ListGuesser {...props}>
+    <BookReviewsField source={'author'} />
+  </ListGuesser>
+);
+
+const BookShowGuesser = props => (
+  <ShowGuesser {...props}>
+    <BookReviewsField source={'author'} />
+  </ShowGuesser>
+);
+
+const BookCreateGuesser = props => (
+  <CreateGuesser {...props}>
+    <BookReviewsInput source={'author'} />
+  </CreateGuesser>
+);
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props}>
+    <BookReviewsInput source={'author'} />
+  </EditGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} list={BookListGuesser} show={BookShowGuesser} create={BookCreateGuesser} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://localhost:8443">
+        <BookResourceGuesser name={'books'}/>
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### To a collection
+
+```
+import React, {Component} from 'react';
+import {HydraAdmin, ListGuesser, ResourceGuesser, ShowGuesser, CreateGuesser, EditGuesser} from '@api-platform/admin';
+import {ReferenceArrayField, SingleFieldList, ChipField, ReferenceArrayInput, SelectArrayInput} from 'react-admin';
+
+const BookReviewsField = (props) => (
+  <ReferenceArrayField reference={'reviews'} {...props}>
+    <SingleFieldList>
+      <ChipField source="body"/>
+    </SingleFieldList>
+  </ReferenceArrayField>
+);
+
+const BookReviewsInput = (props) => (
+  <ReferenceArrayInput reference={'reviews'} {...props}>
+      <SelectArrayInput optionText="id"/>
+  </ReferenceArrayInput>
+);
+
+const BookListGuesser = props => (
+  <ListGuesser {...props}>
+    <BookReviewsField source={'reviews'} />
+  </ListGuesser>
+);
+
+const BookShowGuesser = props => (
+  <ShowGuesser {...props}>
+    <BookReviewsField source={'reviews'} />
+  </ShowGuesser>
+);
+
+const BookCreateGuesser = props => (
+  <CreateGuesser {...props}>
+    <BookReviewsInput source={'reviews'} />
+  </CreateGuesser>
+);
+
+const BookEditGuesser = props => (
+  <EditGuesser {...props}>
+    <BookReviewsInput source={'reviews'} />
+  </EditGuesser>
+);
+
+const BookResourceGuesser = props => (
+  <ResourceGuesser {...props} list={BookListGuesser} show={BookShowGuesser} create={BookCreateGuesser} edit={BookEditGuesser} />
+);
+
+class App extends Component {
+  render() {
+    return (
+      <HydraAdmin entrypoint="https://localhost:8443">
+        <BookResourceGuesser name={'books'}/>
+      </HydraAdmin>
+    );
+  }
+}
+
+export default App;
+```
+
+### Using an Autocomplete Input
+
+## Advanced
+### Managing Files and Images
